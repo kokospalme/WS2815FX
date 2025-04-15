@@ -36,6 +36,7 @@
 
 #ifndef WS2812FX_h
 #define WS2812FX_h
+#include <FastLED.h>
 
 #define FSH(x) (__FlashStringHelper*)(x)
 #define MAX_MILLIS (0UL - 1UL) /* ULONG_MAX */
@@ -513,6 +514,8 @@ class WS2812FX : public Adafruit_NeoPixel {
       setCustomShow(void (*p)()),
       setSpeed(uint16_t s),
       setSpeed(uint8_t seg, uint16_t s),
+      setVariable1(uint8_t v),
+      setVariable2(uint8_t v),
       increaseSpeed(uint8_t s),
       decreaseSpeed(uint8_t s),
       setColor(uint8_t r, uint8_t g, uint8_t b),
@@ -520,6 +523,9 @@ class WS2812FX : public Adafruit_NeoPixel {
       setColor(uint32_t c),
       setColor(uint8_t seg, uint32_t c),
       setColors(uint8_t seg, uint32_t* c),
+      setColor(CRGB c),
+      setColor(uint8_t seg, CRGB c),
+      setColors(uint8_t seg, CRGB* c),
       fill(uint32_t c, uint16_t f, uint16_t cnt),
       setBrightness(uint8_t b),
       increaseBrightness(uint8_t s),
@@ -755,8 +761,9 @@ class WS2812FX : public Adafruit_NeoPixel {
 
     uint16_t _seg_len;                  // num LEDs in the currently active segment
 
-    //thread stuff
-    static SemaphoreHandle_t mutex;
+    uint8_t _var1 = 0;                  // variable 1 (8 bits)
+    uint8_t _var2 = 0;                  // variable 2 (8 bits)
+
 };
 
 class WS2812FXT {

@@ -55,7 +55,6 @@
 #include "WS2812FX.h"
 
 void WS2812FX::init() {
-  mutex = xSemaphoreCreateMutex();
   resetSegmentRuntimes();
   begin();
 }
@@ -97,54 +96,39 @@ bool WS2812FX::service() {
 // overload setPixelColor() functions so we can use gamma correction
 // (see https://learn.adafruit.com/led-tricks-gamma-correction/the-issue)
 void WS2812FX::setPixelColor(uint16_t n, uint32_t c) {
-  if (xSemaphoreTake(mutex, portMAX_DELAY) == pdTRUE) {    //put DMX data to buffer
-    uint8_t w = (c >> 24) & 0xFF;
-    uint8_t r = (c >> 16) & 0xFF;
-    uint8_t g = (c >>  8) & 0xFF;
-    uint8_t b =  c        & 0xFF;
-    setPixelColor(n, r, g, b, w);
-    xSemaphoreGive(mutex);
-  }
+  uint8_t w = (c >> 24) & 0xFF;
+  uint8_t r = (c >> 16) & 0xFF;
+  uint8_t g = (c >>  8) & 0xFF;
+  uint8_t b =  c        & 0xFF;
+  setPixelColor(n, r, g, b, w);
 }
 
 void WS2812FX::setPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t b) {
-  if (xSemaphoreTake(mutex, portMAX_DELAY) == pdTRUE) {    //put DMX data to buffer
-    setPixelColor(n, r, g, b, 0);
-    xSemaphoreGive(mutex);
-  }
-  
+  setPixelColor(n, r, g, b, 0);
 }
 
 void WS2812FX::setPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t b, uint8_t w) {
-  if (xSemaphoreTake(mutex, portMAX_DELAY) == pdTRUE) {    //put DMX data to buffer
-    #if defined(MEGATINYCORE)  // if compiling for an ATtiny device (to conserve memory, no gamma correction)
-    tinyNeoPixel::setPixelColor(n, r, g, b, w);
-  #else
-    if(IS_GAMMA) {
-      Adafruit_NeoPixel::setPixelColor(n, gamma8(r), gamma8(g), gamma8(b), gamma8(w));
-    } else {
-      Adafruit_NeoPixel::setPixelColor(n, r, g, b, w);
-    }
-  #endif
-    xSemaphoreGive(mutex);
+#if defined(MEGATINYCORE)  // if compiling for an ATtiny device (to conserve memory, no gamma correction)
+  tinyNeoPixel::setPixelColor(n, r, g, b, w);
+#else
+  if(IS_GAMMA) {
+    Adafruit_NeoPixel::setPixelColor(n, gamma8(r), gamma8(g), gamma8(b), gamma8(w));
+  } else {
+    Adafruit_NeoPixel::setPixelColor(n, r, g, b, w);
   }
-
-
+#endif
 }
 
 // custom setPixelColor() function that bypasses the Adafruit_Neopixel global brightness rigmarole
 void WS2812FX::setRawPixelColor(uint16_t n, uint32_t c) {
-  if (xSemaphoreTake(mutex, portMAX_DELAY) == pdTRUE) {    //put DMX data to buffer
-    if (n < numLEDs) {
-      uint8_t *p = (wOffset == rOffset) ? &pixels[n * 3] : &pixels[n * 4];
-      uint8_t w = (uint8_t)(c >> 24), r = (uint8_t)(c >> 16), g = (uint8_t)(c >> 8), b = (uint8_t)c;
-  
-      p[wOffset] = w;
-      p[rOffset] = r;
-      p[gOffset] = g;
-      p[bOffset] = b;
-    }
-    xSemaphoreGive(mutex);
+  if (n < numLEDs) {
+    uint8_t *p = (wOffset == rOffset) ? &pixels[n * 3] : &pixels[n * 4];
+    uint8_t w = (uint8_t)(c >> 24), r = (uint8_t)(c >> 16), g = (uint8_t)(c >> 8), b = (uint8_t)c;
+
+    p[wOffset] = w;
+    p[rOffset] = r;
+    p[gOffset] = g;
+    p[bOffset] = b;
   }
 }
 
@@ -178,10 +162,7 @@ void WS2812FX::setPixels(uint16_t num_leds, uint8_t* ptr) {
 
 // run the default or custom show() function
 void WS2812FX::execShow(void) {
-  if (xSemaphoreTake(mutex, portMAX_DELAY) == pdTRUE) {    //put DMX data to buffer
-    customShow == NULL ? show() : customShow();
-    xSemaphoreGive(mutex);
-  }
+  customShow == NULL ? show() : customShow();
 }
 
 void WS2812FX::start() {
@@ -207,19 +188,12 @@ void WS2812FX::trigger() {
 }
 
 void WS2812FX::setMode(uint8_t m) {
-  if (xSemaphoreTake(mutex, portMAX_DELAY) == pdTRUE) {    //put DMX data to buffer
-    setMode(0, m);
-    xSemaphoreGive(mutex);
-  }
+  setMode(0, m);
 }
 
 void WS2812FX::setMode(uint8_t seg, uint8_t m) {
-  if (xSemaphoreTake(mutex, portMAX_DELAY) == pdTRUE) {    //put DMX data to buffer
-    resetSegmentRuntime(seg);
-    _segments[seg].mode = constrain(m, 0, MODE_COUNT - 1);
-    xSemaphoreGive(mutex);
-  }
-
+  resetSegmentRuntime(seg);
+  _segments[seg].mode = constrain(m, 0, MODE_COUNT - 1);
 }
 
 void WS2812FX::setOptions(uint8_t seg, uint8_t o) {
@@ -227,17 +201,11 @@ void WS2812FX::setOptions(uint8_t seg, uint8_t o) {
 }
 
 void WS2812FX::setSpeed(uint16_t s) {
-  if (xSemaphoreTake(mutex, portMAX_DELAY) == pdTRUE) {    //put DMX data to buffer
-    setSpeed(0, s);
-    xSemaphoreGive(mutex);
-  }
+  setSpeed(0, s);
 }
 
 void WS2812FX::setSpeed(uint8_t seg, uint16_t s) {
-  if (xSemaphoreTake(mutex, portMAX_DELAY) == pdTRUE) {    //put DMX data to buffer
-    _segments[seg].speed = constrain(s, SPEED_MIN, SPEED_MAX);
-    xSemaphoreGive(mutex);
-  }
+  _segments[seg].speed = constrain(s, SPEED_MIN, SPEED_MAX);
 }
 
 void WS2812FX::increaseSpeed(uint8_t s) {
@@ -251,10 +219,7 @@ void WS2812FX::decreaseSpeed(uint8_t s) {
 }
 
 void WS2812FX::setColor(uint8_t r, uint8_t g, uint8_t b) {
-  if (xSemaphoreTake(mutex, portMAX_DELAY) == pdTRUE) {    //put DMX data to buffer
-    setColor(((uint32_t)r << 16) | ((uint32_t)g << 8) | b);
-    xSemaphoreGive(mutex);
-  }
+  setColor(((uint32_t)r << 16) | ((uint32_t)g << 8) | b);
 }
 
 void WS2812FX::setColor(uint8_t r, uint8_t g, uint8_t b, uint8_t w) {
@@ -263,6 +228,11 @@ void WS2812FX::setColor(uint8_t r, uint8_t g, uint8_t b, uint8_t w) {
 
 void WS2812FX::setColor(uint32_t c) {
   setColor(0, c);
+}
+
+void WS2812FX::setColor(uint8_t seg, CRGB c) {
+  uint32_t _color = (c.r << 16) | (c.g << 8) | c.b;
+  setColor(0, _color);
 }
 
 void WS2812FX::setColor(uint8_t seg, uint32_t c) {
@@ -275,14 +245,17 @@ void WS2812FX::setColors(uint8_t seg, uint32_t* c) {
   }
 }
 
+void WS2812FX::setColors(uint8_t seg, CRGB* c) {
+  for(uint8_t i=0; i<MAX_NUM_COLORS; i++) {
+    uint32_t _color = (c[i].r << 16) | (c[i].g << 8) | c[i].b;
+    _segments[seg].colors[i] = _color;
+  }
+}
+
 void WS2812FX::setBrightness(uint8_t b) {
 //b = constrain(b, BRIGHTNESS_MIN, BRIGHTNESS_MAX);
-  if (xSemaphoreTake(mutex, portMAX_DELAY) == pdTRUE) {    //put DMX data to buffer
-    brightness = b;
-    xSemaphoreGive(mutex);
-  }
-  
-  execShow(); //is already threadsafe
+  brightness = b;
+  execShow();
 }
 
 void WS2812FX::increaseBrightness(uint8_t s) {
