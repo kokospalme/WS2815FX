@@ -754,6 +754,9 @@ class WS2812FX : public Adafruit_NeoPixel {
     segment_runtime* _seg_rt;           // currently active segment runtime (16 bytes)
 
     uint16_t _seg_len;                  // num LEDs in the currently active segment
+
+    //thread stuff
+    static SemaphoreHandle_t mutex;
 };
 
 class WS2812FXT {
